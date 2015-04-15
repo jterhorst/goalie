@@ -33,3 +33,7 @@ build/
 
 # unless supporting rvm < 1.11.0 or doing something fancy, ignore this:
 .rvmrc
+
+# goalie settings shouldn't be shared
+goalie_settings.yml
+crash_cache.yml

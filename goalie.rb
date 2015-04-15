@@ -25,7 +25,7 @@ require "yaml"
 #  room_token: room notification token
 #  room_id: ID for the same room
 
-$settings = YAML::load_file "goalie_settings.yml"
+$settings = YAML::load_file "#{File.dirname(__FILE__)}/goalie_settings.yml"
 
 $thresholds = [50,100,150,200,250,500,1000] # points at which we trigger notifications. less than the lowest are ignored.
 $thresholds.sort
@@ -36,8 +36,8 @@ $hipchat_token = $settings['hipchat']['room_token']
 $room_number = $settings['hipchat']['room_id']
 
 $crash_cache = ''
-if File.exist?('crash_cache.yml')
-	$crash_cache = YAML::load_file "crash_cache.yml"
+if File.exist?("#{File.dirname(__FILE__)}/crash_cache.yml")
+	$crash_cache = YAML::load_file "#{File.dirname(__FILE__)}/crash_cache.yml"
 end
 
 def carlton_dance
@@ -210,7 +210,7 @@ def check_crashes()
 		carlton_dance
 	end
 
-	File.open("crash_cache.yml", "w") do |file|
+	File.open("#{File.dirname(__FILE__)}/crash_cache.yml", "w") do |file|
 		file.write $crash_cache.to_yaml
 	end
 end

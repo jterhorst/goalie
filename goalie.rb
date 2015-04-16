@@ -27,7 +27,7 @@ require "yaml"
 
 $settings = YAML::load_file "#{File.dirname(__FILE__)}/goalie_settings.yml"
 
-$thresholds = [50,100,150,200,250,500,1000] # points at which we trigger notifications. less than the lowest are ignored.
+$thresholds = [20,50,100,150,200,250,500,1000] # points at which we trigger notifications. less than the lowest are ignored.
 $thresholds.sort
 
 $app_id = $settings['hockey']['app_id']

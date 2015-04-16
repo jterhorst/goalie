@@ -30,6 +30,9 @@ $settings = YAML::load_file "#{File.dirname(__FILE__)}/goalie_settings.yml"
 $thresholds = [20,50,100,150,200,250,500,1000] # points at which we trigger notifications. less than the lowest are ignored.
 $thresholds.sort
 
+$gifs = YAML::load_file "#{File.dirname(__FILE__)}/gifs.yml"
+puts $gifs
+
 $app_id = $settings['hockey']['app_id']
 $hockey_sdk_token = $settings['hockey']['sdk_token']
 $hipchat_token = $settings['hipchat']['room_token']
@@ -40,31 +43,17 @@ if File.exist?("#{File.dirname(__FILE__)}/crash_cache.yml")
 	$crash_cache = YAML::load_file "#{File.dirname(__FILE__)}/crash_cache.yml"
 end
 
-def carlton_dance
-	@payload = {
-	    "color" => 'green',
-	    "message" => "(dance) All major crashes cleared! http://media2.giphy.com/media/HblOOWbFjX8Ri/giphy.gif",
-	    "notify" => false,
-	    "message_format" => 'text'
-	}.to_json
-
-	url = "https://api.hipchat.com/v2/room/#{$room_number}/notification"
-	uri = URI.parse(url)
-	https = Net::HTTP.new(uri.host,uri.port)
-	https.use_ssl = true
-	req = Net::HTTP::Post.new(uri.path, initheader = {'Content-Type' => 'application/json', 'Authorization' => "Bearer #{$hipchat_token}"})
-	req.body = @payload
-	res = https.request(req)
-end
-
 def notify_total(total_crash_count)
 	puts "#{total_crash_count} crash groups total"
 	
+	happy_gifs = $gifs['success_gifs']
+	item = happy_gifs.shuffle.first
+
 	color = 'yellow'
 	message = "(failed) #{total_crash_count} open crash issues remaining."
 	if total_crash_count == 0
 		color = 'green'
-		message = "(success) 0 open crash issues remaining! http://myreactiongifs.com/gifs/thumbsupcomputerkid.gif"
+		message = "(success) 0 open crash issues remaining! #{item}"
 	end
 
 	@payload = {
@@ -87,15 +76,19 @@ def notify(crash)
 	# call up hipchat
 	puts "[#{crash['bundle_version']}] #{crash['number_of_crashes']} occurrences - status: #{crash['status']} - #{crash['method']}"
 	
+	happy_gifs = $gifs['success_gifs']
+	grumpy_gifs = $gifs['failure_gifs']
+	item = grumpy_gifs.shuffle.first
 	format = 'html'
 	notify = true
 	color = 'red'
-	message = "<b>#{crash['number_of_crashes']} occurrences</b> of <a href=\"https://rink.hockeyapp.net/manage/apps/#{crash['app_id']}/crash_reasons/#{crash['id']}/multiple\">unresolved crash in <b>#{crash['bundle_short_version']} (#{crash['bundle_version']})</b></a>: <b>#{crash['class']}</b> <i>#{crash['method']}</i> #{crash['exception_type']} #{crash['reason']}"
+	message = "<img src=\"#{item}\" /><br /><b>#{crash['number_of_crashes']} occurrences</b> of <a href=\"https://rink.hockeyapp.net/manage/apps/#{crash['app_id']}/crash_reasons/#{crash['id']}/multiple\">unresolved crash in <b>#{crash['bundle_short_version']} (#{crash['bundle_version']})</b></a>: <b>#{crash['class']}</b> <i>#{crash['method']}</i> #{crash['exception_type']} #{crash['reason']}"
 	if crash['status'] != 0
 		format = 'text'
 		notify = false
 		color = 'green'
-		message = "(awwyiss) No longer unresolved: #{crash['number_of_crashes']} occurrences of crash in #{crash['bundle_short_version']} (#{crash['bundle_version']}): #{crash['class']} #{crash['method']}"
+		item = happy_gifs.shuffle.first
+		message = "No longer unresolved: #{crash['number_of_crashes']} occurrences of crash in #{crash['bundle_short_version']} (#{crash['bundle_version']}): #{crash['class']} #{crash['method']} #{item}"
 	end
 
 	@payload = {
@@ -206,10 +199,6 @@ def check_crashes()
 		notify_total(total_groups)
 	end
 	
-	if $crash_cache.length == 0 && starting_count > 0
-		carlton_dance
-	end
-
 	File.open("#{File.dirname(__FILE__)}/crash_cache.yml", "w") do |file|
 		file.write $crash_cache.to_yaml
 	end

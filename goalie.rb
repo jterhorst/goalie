@@ -195,7 +195,7 @@ def check_crashes()
 		current_page = current_page + 1
 	end
 
-	if starting_count > 0
+	if starting_count > 0 && starting_count != $crash_cache.length
 		notify_total(total_groups)
 	end
 	

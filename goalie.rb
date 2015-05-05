@@ -79,10 +79,10 @@ def notify(crash)
 	happy_gifs = $gifs['success_gifs']
 	grumpy_gifs = $gifs['failure_gifs']
 	item = grumpy_gifs.shuffle.first
-	format = 'html'
+	format = 'text'
 	notify = true
 	color = 'red'
-	message = "<img src=\"#{item}\" /><br /><b>#{crash['number_of_crashes']} occurrences</b> of <a href=\"https://rink.hockeyapp.net/manage/apps/#{crash['app_id']}/crash_reasons/#{crash['id']}/multiple\">unresolved crash in <b>#{crash['bundle_short_version']} (#{crash['bundle_version']})</b></a>: <b>#{crash['class']}</b> <i>#{crash['method']}</i> #{crash['exception_type']} #{crash['reason']}"
+	message = "#{crash['number_of_crashes']} occurrences of unresolved crash in #{crash['bundle_short_version']} (#{crash['bundle_version']}): #{crash['class']} #{crash['method']} #{crash['exception_type']} #{crash['reason']} https://rink.hockeyapp.net/manage/apps/#{crash['app_id']}/crash_reasons/#{crash['id']}/multiple #{item}"
 	if crash['status'] != 0
 		format = 'text'
 		notify = false

@@ -31,8 +31,10 @@ $thresholds = [20,50,100,150,200,250,500,1000] # points at which we trigger noti
 $thresholds.sort
 
 $gifs = YAML::load_file "#{File.dirname(__FILE__)}/gifs.yml"
-puts $gifs
+#puts $gifs
 
+$itunes_version = ""
+$itunes_app_id = $settings['itunes_app_id']
 $app_id = $settings['hockey']['app_id']
 $hockey_sdk_token = $settings['hockey']['sdk_token']
 $hipchat_token = $settings['hipchat']['room_token']
@@ -41,6 +43,31 @@ $room_number = $settings['hipchat']['room_id']
 $crash_cache = ''
 if File.exist?("#{File.dirname(__FILE__)}/crash_cache.yml")
 	$crash_cache = YAML::load_file "#{File.dirname(__FILE__)}/crash_cache.yml"
+end
+
+def get_version_number
+	uri = URI("https://itunes.apple.com/lookup?id=#{$itunes_app_id}")
+
+	resp = {}
+	Net::HTTP.start(uri.host, uri.port, :use_ssl => uri.scheme == 'https') do |http|
+		request = Net::HTTP::Get.new(uri)
+		#request.add_field('X-HockeyAppToken', $hockey_sdk_token)
+		resp = http.request request
+	end
+	data = resp.body
+
+	result = JSON.parse(data)
+
+	result_data = result['results']
+	result_data.each do |entry|
+		if entry['version']
+			puts "entry: "
+			puts entry['version']
+			$itunes_version = entry['version']
+		end
+	end
+	# puts result_data[:version]
+	# $itunes_version = result_data[:version]
 end
 
 def notify_total(total_crash_count)
@@ -180,9 +207,11 @@ def check_crashes()
 		crashes = result['crash_reasons']
 
 		crashes.each do |crash_group|
-			check_resolved(crash_group)
-			if crash_group['status'] == 0
-				check_level(crash_group)
+			if crash_group['bundle_short_version'] == $itunes_version
+				check_resolved(crash_group)
+				if crash_group['status'] == 0
+					check_level(crash_group)
+				end
 			end
 		end
 
@@ -205,6 +234,11 @@ def check_crashes()
 end
 
 puts "Calling Hockey for crashes in latest version...\n"
+
+get_version_number
+if $itunes_version.length == 0
+	return
+end
 
 check_crashes()
 
